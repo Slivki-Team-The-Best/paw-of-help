@@ -1,21 +1,26 @@
-server:
-  port: 8081
-
 spring:
-  config:
-    import:
-      - optional:file:.env[.properties]
   application:
     name: slivky
+
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USER}
-    password: ${DB_PASS}
+    url: jdbc:postgresql://localhost:5432/paw-of-help-db
+    username: postgres
+    password: postgres
     driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
-      ddl-auto: validate
-    open-in-view: false
+      ddl-auto: none
+    properties:
+      hibernate:
+        show_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
   liquibase:
-    change-log: classpath:liquibase/db.changelog.yaml
     enabled: true
+    change-log: classpath:liquibase/db-changelog.xml
+
+logging:
+  level:
+    liquibase: DEBUG
+    org.springframework.boot.autoconfigure.liquibase: DEBUG
