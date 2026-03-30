@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/paw-of-help.iml" filepath="$PROJECT_DIR$/paw-of-help.iml" />
+      <module fileurl="file://$PROJECT_DIR$/slivky/slivky.iml" filepath="$PROJECT_DIR$/slivky/slivky.iml" />
     </modules>
   </component>
 </project>
