@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.urfu.slivky.exception.BadRequestException;
 import ru.urfu.slivky.model.User;
 import ru.urfu.slivky.model.UserRole;
-import ru.urfu.slivky.model.VolunteerPreference;
 import ru.urfu.slivky.repository.UserRepository;
 import ru.urfu.slivky.security.JwtService;
 import ru.urfu.slivky.web.dto.AuthResponse;
@@ -35,12 +34,6 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(req.password()));
         user.setFullName(req.fullName().trim());
         user.setRole(req.role());
-
-        if (req.role() == UserRole.VOLUNTEER) {
-            VolunteerPreference pref = new VolunteerPreference();
-            pref.setUser(user);
-            user.setVolunteerPreference(pref);
-        }
 
         userRepository.save(user);
 

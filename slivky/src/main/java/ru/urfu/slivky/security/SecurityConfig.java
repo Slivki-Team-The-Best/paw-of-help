@@ -43,7 +43,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/skills").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/tasks").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/tasks/*").permitAll()
-                        .requestMatchers("/", "/index.html", "/app.js", "/styles.css").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
