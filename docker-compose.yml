@@ -1,33 +1,44 @@
 services:
-  db:
-    image: postgres:16-alpine
+  postgres:
+    image: postgres:18-alpine
+    restart: always
+    shm_size: 256mb
     environment:
-      POSTGRES_DB: paw-of-help-db
+      POSTGRES_DB: paw_of_help
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pgdbdata:/var/lib/postgresql
+    ports:
+      - "5433:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d paw-of-help-db"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
       interval: 5s
       timeout: 5s
-      retries: 5
-
+      retries: 10
+      start_period: 40s
+    networks:
+      - practice-net
   app:
     build:
       context: ./slivky
       dockerfile: Dockerfile
-    ports:
-      - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/paw-of-help-db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/paw_of_help
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
     depends_on:
-      db:
-        condition: service_healthy
+      postgres:
+        condition: service_healthy # Лучше ждать healthcheck, а не просто старта
+    networks:
+      - practice-net
 
 volumes:
-  postgres_data:
+  pgdbdata:
+
+networks:
+  practice-net:
+    driver: bridge

@@ -38,6 +38,17 @@ public class TaskService {
                 .toList();
     }
 
+    /**
+     * Задачи, созданные текущим пользователем (владелец животного / автор запроса).
+     */
+    @Transactional(readOnly = true)
+    public List<TaskResponse> listMyTasks() {
+        User actor = CurrentUser.get();
+        return taskRepository.findByCreatedByIdOrderByCreatedAtDesc(actor.getId()).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public TaskResponse getTask(Long id) {
         Task task = taskRepository.findDetailById(id)
@@ -162,6 +173,9 @@ public class TaskService {
         if (task.getCreatedBy() != null && Objects.equals(task.getCreatedBy().getId(), actor.getId())) {
             return;
         }
+        if (isShelterRepresentative(task, actor)) {
+            return;
+        }
         throw new AccessDeniedException("You cannot edit this task");
     }
 
@@ -172,7 +186,20 @@ public class TaskService {
         if (task.getCreatedBy() != null && Objects.equals(task.getCreatedBy().getId(), actor.getId())) {
             return;
         }
-        throw new AccessDeniedException("Only the task author can view matches");
+        if (isShelterRepresentative(task, actor)) {
+            return;
+        }
+        throw new AccessDeniedException("Only the task author or shelter representative can view matches");
+    }
+
+    /**
+     * Представитель приюта — пользователь, создавший карточку приюта (учётная запись НКО).
+     */
+    private boolean isShelterRepresentative(Task task, User actor) {
+        if (task.getShelter() == null || task.getShelter().getCreatedBy() == null) {
+            return false;
+        }
+        return Objects.equals(task.getShelter().getCreatedBy().getId(), actor.getId());
     }
 
     private void applySkills(Task task, List<Long> skillIds) {

@@ -23,6 +23,14 @@ public class TaskController {
         return taskService.listTasks();
     }
 
+    /**
+     * Задачи текущего пользователя (владелец / автор запросов).
+     */
+    @GetMapping("/mine")
+    public List<TaskResponse> myTasks() {
+        return taskService.listMyTasks();
+    }
+
     @GetMapping("/{id}")
     public TaskResponse get(@PathVariable Long id) {
         return taskService.getTask(id);

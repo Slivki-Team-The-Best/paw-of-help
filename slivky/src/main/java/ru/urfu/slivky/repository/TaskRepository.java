@@ -12,12 +12,15 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     List<Task> findAllByOrderByCreatedAtDesc();
 
+    List<Task> findByCreatedByIdOrderByCreatedAtDesc(Long createdById);
+
     @Query("""
             SELECT DISTINCT t FROM Task t
             LEFT JOIN FETCH t.requiredSkills
             LEFT JOIN FETCH t.animal
             LEFT JOIN FETCH t.createdBy
-            LEFT JOIN FETCH t.shelter
+            LEFT JOIN FETCH t.shelter sh
+            LEFT JOIN FETCH sh.createdBy
             WHERE t.id = :id
             """)
     Optional<Task> findDetailById(@Param("id") Long id);

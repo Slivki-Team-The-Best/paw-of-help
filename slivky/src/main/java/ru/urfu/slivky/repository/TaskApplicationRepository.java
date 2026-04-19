@@ -9,5 +9,7 @@ public interface TaskApplicationRepository extends JpaRepository<TaskApplication
 
     List<TaskApplication> findByTaskIdOrderByCreatedAtDesc(Long taskId);
 
+    List<TaskApplication> findByVolunteer_IdOrderByCreatedAtDesc(Long volunteerId);
+
     boolean existsByTaskIdAndVolunteerId(Long taskId, Long volunteerId);
 }

@@ -1,16 +1,16 @@
 spring:
   application:
-    name: slivky
+    name: lapa-pomoshi
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/paw-of-help-db
+    url: jdbc:postgresql://db:5432/paw_of_help
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     properties:
       hibernate:
         show_sql: true

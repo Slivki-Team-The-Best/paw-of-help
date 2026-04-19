@@ -10,6 +10,10 @@ import ru.urfu.slivky.web.dto.VolunteerMatchResponse;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Упрощённый мэтчинг (MVP): пересечение навыков, фильтр по типу животного из задачи,
+ * сортировка по рейтингу волонтёра. Без ML и чата.
+ */
 @Service
 @RequiredArgsConstructor
 public class MatchingService {

@@ -1,0 +1,708 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Лапа Помощи API",
+    "version": "1.0.0",
+    "description": "Бэкенд платформы «Лапа Помощи»: волонтёры, владельцы животных, приюты. Импорт в Postman: File → Import. baseUrl: http://localhost:8081. Защищённые методы: Authorization → Bearer Token."
+  },
+  "servers": [{ "url": "http://localhost:8081", "description": "локально" }],
+  "tags": [
+    { "name": "auth" },
+    { "name": "profile" },
+    { "name": "skills" },
+    { "name": "animals" },
+    { "name": "tasks" },
+    { "name": "shelters" },
+    { "name": "users" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "UserRole": {
+        "type": "string",
+        "enum": ["VOLUNTEER", "SHELTER_STAFF", "PET_OWNER", "ADMIN"]
+      },
+      "AnimalType": {
+        "type": "string",
+        "enum": ["DOG", "CAT", "OTHER"]
+      },
+      "TaskType": {
+        "type": "string",
+        "enum": ["MEDICAL", "TRANSPORT", "FOSTER", "CARE", "EVENT", "REPAIR", "PHOTO", "FUNDRAISING", "OTHER"]
+      },
+      "TaskStatus": {
+        "type": "string",
+        "enum": ["OPEN", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "CANCELLED"]
+      },
+      "Priority": {
+        "type": "string",
+        "enum": ["URGENT", "HIGH", "NORMAL", "LOW"]
+      },
+      "ApplicationStatus": {
+        "type": "string",
+        "enum": ["PENDING", "ACCEPTED", "REJECTED", "WITHDRAWN"]
+      },
+      "AnimalGender": {
+        "type": "string",
+        "description": "Если указан — только эти значения (совпадает с CHECK в БД)",
+        "enum": ["MALE", "FEMALE", "UNKNOWN"]
+      },
+      "AnimalStatus": {
+        "type": "string",
+        "description": "Допустимые значения в БД и в AnimalService",
+        "enum": ["SEEKING_HELP", "IN_TREATMENT", "ADOPTED", "FOSTERED", "DECEASED"]
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string" }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["email", "password", "fullName", "role"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "minLength": 8, "maxLength": 128 },
+          "fullName": { "type": "string", "maxLength": 255 },
+          "role": { "$ref": "#/components/schemas/UserRole" }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "token": { "type": "string" },
+          "userId": { "type": "integer", "format": "int64" },
+          "email": { "type": "string" },
+          "role": { "$ref": "#/components/schemas/UserRole" },
+          "fullName": { "type": "string" }
+        }
+      },
+      "VolunteerPreferenceDto": {
+        "type": "object",
+        "properties": {
+          "worksWithCats": { "type": "boolean" },
+          "worksWithDogs": { "type": "boolean" },
+          "worksWithShelters": { "type": "boolean" },
+          "worksWithPrivate": { "type": "boolean" },
+          "availabilitySchedule": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      },
+      "SkillDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "name": { "type": "string" },
+          "category": { "type": "string" }
+        }
+      },
+      "ProfileResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "email": { "type": "string" },
+          "fullName": { "type": "string" },
+          "phone": { "type": "string", "nullable": true },
+          "role": { "$ref": "#/components/schemas/UserRole" },
+          "rating": { "type": "number", "format": "double", "nullable": true },
+          "volunteerHours": { "type": "integer", "nullable": true },
+          "skills": { "type": "array", "items": { "$ref": "#/components/schemas/SkillDto" } },
+          "preferences": { "$ref": "#/components/schemas/VolunteerPreferenceDto", "nullable": true }
+        }
+      },
+      "ProfileUpdateRequest": {
+        "type": "object",
+        "description": "Все поля опциональны (частичное обновление)",
+        "properties": {
+          "fullName": { "type": "string" },
+          "phone": { "type": "string" },
+          "skillIds": { "type": "array", "items": { "type": "integer", "format": "int64" } },
+          "preferences": { "$ref": "#/components/schemas/VolunteerPreferenceDto" }
+        }
+      },
+      "AnimalCreateRequest": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "name": { "type": "string", "maxLength": 100 },
+          "type": { "$ref": "#/components/schemas/AnimalType" },
+          "breed": { "type": "string", "maxLength": 100 },
+          "age": { "type": "integer" },
+          "gender": { "$ref": "#/components/schemas/AnimalGender" },
+          "description": { "type": "string" },
+          "healthStatus": { "type": "string" },
+          "specialNeeds": { "type": "string", "nullable": true },
+          "photoUrls": { "type": "array", "items": { "type": "string" } },
+          "shelterId": { "type": "integer", "format": "int64", "nullable": true },
+          "status": { "$ref": "#/components/schemas/AnimalStatus" }
+        }
+      },
+      "AnimalResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "name": { "type": "string" },
+          "type": { "$ref": "#/components/schemas/AnimalType" },
+          "breed": { "type": "string" },
+          "age": { "type": "integer" },
+          "gender": { "type": "string" },
+          "description": { "type": "string" },
+          "healthStatus": { "type": "string" },
+          "specialNeeds": { "type": "string" },
+          "photoUrls": { "type": "array", "items": { "type": "string" } },
+          "status": { "type": "string" },
+          "shelterId": { "type": "integer", "format": "int64", "nullable": true },
+          "createdById": { "type": "integer", "format": "int64", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TaskCreateRequest": {
+        "type": "object",
+        "required": ["title", "taskType"],
+        "properties": {
+          "title": { "type": "string", "maxLength": 255 },
+          "description": { "type": "string" },
+          "taskType": { "$ref": "#/components/schemas/TaskType" },
+          "priority": { "$ref": "#/components/schemas/Priority" },
+          "animalId": { "type": "integer", "format": "int64", "nullable": true },
+          "shelterId": { "type": "integer", "format": "int64", "nullable": true },
+          "requiredSkillIds": { "type": "array", "items": { "type": "integer", "format": "int64" } },
+          "address": { "type": "string" },
+          "scheduledStart": { "type": "string", "format": "date-time" },
+          "scheduledEnd": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TaskUpdateRequest": {
+        "type": "object",
+        "description": "Все поля опциональны. animalId/shelterId: 0 — сбросить связь.",
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "taskType": { "$ref": "#/components/schemas/TaskType" },
+          "status": { "$ref": "#/components/schemas/TaskStatus" },
+          "priority": { "$ref": "#/components/schemas/Priority" },
+          "requiredSkillIds": { "type": "array", "items": { "type": "integer", "format": "int64" } },
+          "address": { "type": "string" },
+          "scheduledStart": { "type": "string", "format": "date-time" },
+          "scheduledEnd": { "type": "string", "format": "date-time" },
+          "animalId": { "type": "integer", "format": "int64" },
+          "shelterId": { "type": "integer", "format": "int64" }
+        }
+      },
+      "TaskResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "taskType": { "$ref": "#/components/schemas/TaskType" },
+          "status": { "$ref": "#/components/schemas/TaskStatus" },
+          "priority": { "$ref": "#/components/schemas/Priority" },
+          "createdById": { "type": "integer", "format": "int64", "nullable": true },
+          "createdByName": { "type": "string", "nullable": true },
+          "animalId": { "type": "integer", "format": "int64", "nullable": true },
+          "shelterId": { "type": "integer", "format": "int64", "nullable": true },
+          "requiredSkills": { "type": "array", "items": { "$ref": "#/components/schemas/SkillDto" } },
+          "address": { "type": "string" },
+          "scheduledStart": { "type": "string", "format": "date-time" },
+          "scheduledEnd": { "type": "string", "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TaskApplicationRequest": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "maxLength": 2000 }
+        }
+      },
+      "TaskApplicationResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "volunteerId": { "type": "integer", "format": "int64" },
+          "volunteerName": { "type": "string" },
+          "volunteerEmail": { "type": "string" },
+          "message": { "type": "string" },
+          "status": { "$ref": "#/components/schemas/ApplicationStatus" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "VolunteerMatchResponse": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "integer", "format": "int64" },
+          "fullName": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "rating": { "type": "number" },
+          "volunteerHours": { "type": "integer" },
+          "matchedSkills": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "ErrorBody": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
+        }
+      },
+      "ShelterResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "address": { "type": "string" },
+          "phone": { "type": "string" },
+          "email": { "type": "string" },
+          "website": { "type": "string" },
+          "verified": { "type": "boolean" },
+          "createdByUserId": { "type": "integer", "format": "int64" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ShelterCreateRequest": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "address": { "type": "string" },
+          "phone": { "type": "string" },
+          "email": { "type": "string" },
+          "website": { "type": "string" }
+        }
+      },
+      "ShelterUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "address": { "type": "string" },
+          "phone": { "type": "string" },
+          "email": { "type": "string" },
+          "website": { "type": "string" }
+        }
+      },
+      "VolunteerPublicProfileResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "fullName": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "rating": { "type": "number" },
+          "volunteerHours": { "type": "integer" },
+          "skills": { "type": "array", "items": { "$ref": "#/components/schemas/SkillDto" } },
+          "preferences": { "$ref": "#/components/schemas/VolunteerPreferenceDto" }
+        }
+      },
+      "MyApplicationResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "taskId": { "type": "integer", "format": "int64" },
+          "taskTitle": { "type": "string" },
+          "message": { "type": "string" },
+          "status": { "$ref": "#/components/schemas/ApplicationStatus" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Регистрация",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации / бизнес-ошибка",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorBody" } } }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Вход",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthResponse" }
+              }
+            }
+          },
+          "400": { "description": "Bad Request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorBody" } } } }
+        }
+      }
+    },
+    "/api/me": {
+      "get": {
+        "tags": ["profile"],
+        "summary": "Текущий пользователь",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProfileResponse" } } } },
+          "401": { "description": "Нет/невалидный JWT" }
+        }
+      },
+      "patch": {
+        "tags": ["profile"],
+        "summary": "Обновить профиль",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProfileUpdateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProfileResponse" } } } },
+          "401": {}
+        }
+      }
+    },
+    "/api/skills": {
+      "get": {
+        "tags": ["skills"],
+        "summary": "Список навыков",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/SkillDto" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/animals": {
+      "get": {
+        "tags": ["animals"],
+        "summary": "Список животных",
+        "parameters": [
+          {
+            "name": "shelterId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int64" },
+            "description": "Фильтр по приюту"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/AnimalResponse" } }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["animals"],
+        "summary": "Создать животное (PET_OWNER, SHELTER_STAFF, ADMIN)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AnimalCreateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AnimalResponse" } } } },
+          "400": {},
+          "401": {},
+          "403": {}
+        }
+      }
+    },
+    "/api/animals/{id}": {
+      "get": {
+        "tags": ["animals"],
+        "summary": "Животное по id",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AnimalResponse" } } } },
+          "404": {}
+        }
+      }
+    },
+    "/api/tasks": {
+      "get": {
+        "tags": ["tasks"],
+        "summary": "Список задач",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/TaskResponse" } }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["tasks"],
+        "summary": "Создать задачу (PET_OWNER, SHELTER_STAFF, ADMIN)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TaskCreateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TaskResponse" } } } },
+          "400": {},
+          "401": {},
+          "403": {}
+        }
+      }
+    },
+    "/api/tasks/{id}": {
+      "get": {
+        "tags": ["tasks"],
+        "summary": "Задача по id",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TaskResponse" } } } },
+          "404": {}
+        }
+      },
+      "patch": {
+        "tags": ["tasks"],
+        "summary": "Обновить задачу (автор или admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TaskUpdateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TaskResponse" } } } },
+          "403": {},
+          "404": {}
+        }
+      },
+      "delete": {
+        "tags": ["tasks"],
+        "summary": "Удалить задачу",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "responses": {
+          "204": { "description": "Нет тела" },
+          "403": {},
+          "404": {}
+        }
+      }
+    },
+    "/api/tasks/{id}/matches": {
+      "get": {
+        "tags": ["tasks"],
+        "summary": "Подходящие волонтёры (автор задачи)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/VolunteerMatchResponse" } }
+              }
+            }
+          },
+          "403": {},
+          "404": {}
+        }
+      }
+    },
+    "/api/tasks/{id}/applications": {
+      "get": {
+        "tags": ["tasks"],
+        "summary": "Заявки на задачу",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/TaskApplicationResponse" } }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["tasks"],
+        "summary": "Подать заявку на задачу",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TaskApplicationRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TaskApplicationResponse" } } } },
+          "400": {}
+        }
+      }
+    },
+    "/api/tasks/mine": {
+      "get": {
+        "tags": ["tasks"],
+        "summary": "Мои задачи (созданные текущим пользователем)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/TaskResponse" } }
+              }
+            }
+          },
+          "401": {}
+        }
+      }
+    },
+    "/api/me/applications": {
+      "get": {
+        "tags": ["profile"],
+        "summary": "Мои отклики (VOLUNTEER)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/MyApplicationResponse" } }
+              }
+            }
+          },
+          "401": {},
+          "403": {}
+        }
+      }
+    },
+    "/api/shelters/mine": {
+      "get": {
+        "tags": ["shelters"],
+        "summary": "Мои приюты (созданные текущим пользователем)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ShelterResponse" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shelters": {
+      "post": {
+        "tags": ["shelters"],
+        "summary": "Создать карточку приюта (SHELTER_STAFF, ADMIN)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ShelterCreateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShelterResponse" } } } }
+        }
+      }
+    },
+    "/api/shelters/{id}": {
+      "get": {
+        "tags": ["shelters"],
+        "summary": "Карточка приюта",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShelterResponse" } } } },
+          "404": {}
+        }
+      },
+      "patch": {
+        "tags": ["shelters"],
+        "summary": "Редактировать приют (создатель или ADMIN)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ShelterUpdateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShelterResponse" } } } }
+        }
+      }
+    },
+    "/api/users/{id}/profile": {
+      "get": {
+        "tags": ["users"],
+        "summary": "Публичный профиль волонтёра (контакты и навыки)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/VolunteerPublicProfileResponse" } } } },
+          "404": {}
+        }
+      }
+    }
+  }
+}

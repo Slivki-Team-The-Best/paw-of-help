@@ -10,6 +10,7 @@ import ru.urfu.slivky.model.*;
 import ru.urfu.slivky.repository.TaskApplicationRepository;
 import ru.urfu.slivky.repository.TaskRepository;
 import ru.urfu.slivky.security.CurrentUser;
+import ru.urfu.slivky.web.dto.MyApplicationResponse;
 import ru.urfu.slivky.web.dto.TaskApplicationRequest;
 import ru.urfu.slivky.web.dto.TaskApplicationResponse;
 
@@ -60,6 +61,24 @@ public class TaskApplicationService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<MyApplicationResponse> listMine() {
+        User volunteer = CurrentUser.get();
+        if (volunteer.getRole() != UserRole.VOLUNTEER) {
+            throw new AccessDeniedException("Only volunteers have applications");
+        }
+        return applicationRepository.findByVolunteer_IdOrderByCreatedAtDesc(volunteer.getId()).stream()
+                .map(a -> new MyApplicationResponse(
+                        a.getId(),
+                        a.getTask().getId(),
+                        a.getTask().getTitle(),
+                        a.getMessage(),
+                        a.getStatus(),
+                        a.getCreatedAt()
+                ))
+                .toList();
+    }
+
     private void assertTaskOwner(Task task, User actor) {
         if (actor.getRole() == UserRole.ADMIN) {
             return;
@@ -67,7 +86,11 @@ public class TaskApplicationService {
         if (task.getCreatedBy() != null && Objects.equals(task.getCreatedBy().getId(), actor.getId())) {
             return;
         }
-        throw new AccessDeniedException("Only the task author can view applications");
+        if (task.getShelter() != null && task.getShelter().getCreatedBy() != null
+                && Objects.equals(task.getShelter().getCreatedBy().getId(), actor.getId())) {
+            return;
+        }
+        throw new AccessDeniedException("Only the task author or shelter representative can view applications");
     }
 
     private TaskApplicationResponse toResponse(TaskApplication app) {
