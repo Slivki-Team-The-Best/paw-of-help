@@ -1,15 +1,21 @@
 package ru.urfu.slivky.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.annotations.Type;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
 public class User {
 
     @Id
@@ -27,11 +33,9 @@ public class User {
 
     private String phone;
 
-    @Type(type = "org.hibernate.spatial.GeometryType")
-    private org.locationtech.jts.geom.Point location;
-
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String role;
+    private UserRole role;
 
     private Double rating = 0.0;
 
@@ -46,13 +50,14 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "volunteer_skills",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "skill_id")
     )
-    private Set<Skill> skills;
+    private Set<Skill> skills = new HashSet<>();
 
-    // Геттеры и сеттеры
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private VolunteerPreference volunteerPreference;
 }

@@ -24,3 +24,7 @@ logging:
   level:
     liquibase: DEBUG
     org.springframework.boot.autoconfigure.liquibase: DEBUG
+
+jwt:
+  secret: "ChangeMe_UseAtLeast256BitsSecretKeyForProductionEnvironment1234567890"
+  expiration-ms: 86400000

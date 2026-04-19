@@ -6,5 +6,6 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <include file="classpath:liquibase/changesets/v1__migration.sql"/>
+    <include file="classpath:liquibase/changesets/v2__task_applications.sql"/>
 
 </databaseChangeLog>

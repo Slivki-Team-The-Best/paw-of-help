@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Лапа Помощи</title>
+    <link rel="stylesheet" href="/styles.css"/>
+</head>
+<body>
+<header class="top">
+    <h1>Лапа Помощи</h1>
+    <nav class="nav">
+        <button type="button" data-view="home">Главная</button>
+        <button type="button" data-view="tasks">Задачи</button>
+        <button type="button" data-view="profile">Кабинет</button>
+        <button type="button" data-view="register">Регистрация</button>
+        <button type="button" data-view="login">Вход</button>
+        <button type="button" id="logoutBtn" hidden>Выйти</button>
+    </nav>
+</header>
+
+<main class="main">
+    <p id="flash" class="flash" hidden></p>
+
+    <section id="view-home" class="view">
+        <p>Платформа для волонтёров, владельцев животных и приютов. Зарегистрируйтесь, создавайте задачи и находите подходящих помощников.</p>
+    </section>
+
+    <section id="view-register" class="view" hidden>
+        <h2>Регистрация</h2>
+        <form id="form-register" class="form">
+            <label>Email <input name="email" type="email" required autocomplete="email"/></label>
+            <label>Пароль <input name="password" type="password" minlength="8" required autocomplete="new-password"/></label>
+            <label>Имя <input name="fullName" required maxlength="255"/></label>
+            <label>Роль
+                <select name="role" required>
+                    <option value="VOLUNTEER">Волонтёр</option>
+                    <option value="PET_OWNER">Владелец животного</option>
+                    <option value="SHELTER_STAFF">Приют / НКО</option>
+                </select>
+            </label>
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+    </section>
+
+    <section id="view-login" class="view" hidden>
+        <h2>Вход</h2>
+        <form id="form-login" class="form">
+            <label>Email <input name="email" type="email" required autocomplete="username"/></label>
+            <label>Пароль <input name="password" type="password" required autocomplete="current-password"/></label>
+            <button type="submit">Войти</button>
+        </form>
+    </section>
+
+    <section id="view-tasks" class="view" hidden>
+        <h2>Задачи</h2>
+        <div id="task-create-wrap" class="card" hidden>
+            <h3>Новая задача</h3>
+            <form id="form-task" class="form">
+                <label>Заголовок <input name="title" required maxlength="255"/></label>
+                <label>Описание <textarea name="description" rows="3"></textarea></label>
+                <label>Тип
+                    <select name="taskType" required></select>
+                </label>
+                <label>Приоритет
+                    <select name="priority">
+                        <option value="">по умолчанию</option>
+                    </select>
+                </label>
+                <label>Нужные навыки (несколько с Ctrl)</label>
+                <select name="requiredSkillIds" multiple size="6" id="task-skills"></select>
+                <button type="submit">Создать задачу</button>
+            </form>
+        </div>
+        <ul id="task-list" class="list"></ul>
+    </section>
+
+    <section id="view-task-detail" class="view" hidden>
+        <button type="button" class="link-back" id="task-detail-back">← К списку</button>
+        <div id="task-detail"></div>
+        <div id="task-matches-wrap" class="card" hidden>
+            <h3>Подходящие волонтёры</h3>
+            <p class="hint">Доступно автору задачи после входа.</p>
+            <ul id="task-matches" class="list"></ul>
+        </div>
+        <div id="task-apply-wrap" class="card" hidden>
+            <h3>Откликнуться</h3>
+            <form id="form-apply" class="form">
+                <label>Сообщение <textarea name="message" rows="3" maxlength="2000"></textarea></label>
+                <button type="submit">Отправить отклик</button>
+            </form>
+        </div>
+        <div id="task-apps-wrap" class="card" hidden>
+            <h3>Отклики</h3>
+            <ul id="task-apps" class="list"></ul>
+        </div>
+    </section>
+
+    <section id="view-profile" class="view" hidden>
+        <h2>Личный кабинет</h2>
+        <div id="profile-view" class="card"></div>
+        <form id="form-profile" class="form card" hidden>
+            <h3>Редактирование</h3>
+            <label>Имя <input name="fullName"/></label>
+            <label>Телефон <input name="phone"/></label>
+            <div id="profile-volunteer-fields" hidden>
+                <label>Навыки</label>
+                <select name="skillIds" multiple size="8" id="profile-skills"></select>
+                <fieldset class="prefs">
+                    <legend>Предпочтения по животным</legend>
+                    <label><input type="checkbox" name="worksWithCats"/> Кошки</label>
+                    <label><input type="checkbox" name="worksWithDogs"/> Собаки</label>
+                    <label><input type="checkbox" name="worksWithShelters"/> Приюты</label>
+                    <label><input type="checkbox" name="worksWithPrivate"/> Частные владельцы</label>
+                </fieldset>
+            </div>
+            <button type="submit">Сохранить</button>
+        </form>
+    </section>
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>
