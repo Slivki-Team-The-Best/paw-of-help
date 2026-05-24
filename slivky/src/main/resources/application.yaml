@@ -3,9 +3,9 @@ spring:
     name: lapa-pomoshi
 
   datasource:
-    url: jdbc:postgresql://db:5432/paw_of_help
-    username: postgres
-    password: postgres
+    url: ${URL_PG:jdbc:postgresql://db:5432/paw_of_help}
+    username:  ${LOGIN_PG:postgres}
+    password: ${PASS_PG:postgres}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -26,7 +26,7 @@ logging:
     org.springframework.boot.autoconfigure.liquibase: DEBUG
 
 jwt:
-  secret: "ChangeMe_UseAtLeast256BitsSecretKeyForProductionEnvironment1234567890"
+  secret: ${SECRET_URL:ChangeMe_UseAtLeast256BitsSecretKeyForProductionEnvironment1234567890}
   expiration-ms: 86400000
 
 server:
